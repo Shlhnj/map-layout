@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Simple Map Layout</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>
+    #map { height: 600px; width: 100%; }
+    #basemapSelector {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      z-index: 1000;
+      background: white;
+      padding: 6px;
+      border-radius: 4px;
+      font-family: sans-serif;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Simple Map Layout Web App</h2>
+
+<!-- Basemap dropdown -->
+<div id="basemapSelector">
+  <label for="basemap">Basemap:</label>
+  <select id="basemap">
+    <option value="osm">OpenStreetMap</option>
+    <option value="esri">Esri Aerial</option>
+  </select>
+</div>
+
+<!-- Map container -->
+<div id="map"></div>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<script>
+  // Map initialization
+  var map = L.map('map').setView([-7.1, 110.5], 13);
+
+  // Basemap layers
+  var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap contributors'
+  });
+
+  var esri = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/' +
+                         'World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    attribution: 'Source: Esri, Maxar, Earthstar Geographics, and the GIS community'
+  });
+
+  // Add default layer
+  osm.addTo(map);
+
+  // Basemap switcher
+  const selector = document.getElementById('basemap');
+  selector.addEventListener('change', function() {
+    map.eachLayer(function(layer) {
+      map.removeLayer(layer);
+    });
+
+    // Add selected basemap back
+    if (this.value === 'esri') {
+      esri.addTo(map);
+    } else {
+      osm.addTo(map);
+    }
+  });
+</script>
+
+</body>
+</html>
