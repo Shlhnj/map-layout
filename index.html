@@ -8,34 +8,20 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    body {
-      margin: 0;
-      font-family: sans-serif;
-    }
-
+    body { margin: 0; font-family: sans-serif; }
     header {
       text-align: center;
       background: #f0f0f0;
       padding: 10px;
       font-size: 1.5em;
-      font-weight: bold;
     }
-
-    #container {
-      display: flex;
-    }
-
-    #map {
-      height: calc(100vh - 60px);
-      width: 50%;
-    }
-
+    #container { display: flex; }
+    #map { height: calc(100vh - 60px); width: 50%; }
     #sidepanel {
       width: 50%;
       padding: 10px;
       position: relative;
     }
-
     #basemapSelector {
       position: absolute;
       top: 10px;
@@ -55,7 +41,7 @@
   <!-- Left: Map -->
   <div id="map"></div>
 
-  <!-- Right: Side panel -->
+  <!-- Right: Panel -->
   <div id="sidepanel">
     <!-- Basemap selector -->
     <div id="basemapSelector">
@@ -66,19 +52,33 @@
       </select>
     </div>
 
-    <!-- You can add more map controls, legends, uploads etc here -->
-    <p>🧭 Add controls here...</p>
+    <h3>Map Controls</h3>
+
+    <!-- Set bounding box -->
+    <label>Set Bounds:</label><br>
+    <input type="number" id="latMin" placeholder="Lat Min" step="any"><br>
+    <input type="number" id="latMax" placeholder="Lat Max" step="any"><br>
+    <input type="number" id="lonMin" placeholder="Lon Min" step="any"><br>
+    <input type="number" id="lonMax" placeholder="Lon Max" step="any"><br>
+    <button onclick="setBounds()">Apply Bounds</button><br><br>
+
+    <!-- Upload points -->
+    <label>Upload CSV/Excel (with lat/lon):</label><br>
+    <input type="file" id="fileInput"><br><br>
   </div>
 </div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<!-- PapaParse for CSV -->
+<script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
+<!-- SheetJS for Excel -->
+<script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
 <script>
   // Initialize map
   var map = L.map('map').setView([-7.1, 110.5], 13);
 
-  // Tile layers
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   });
@@ -88,22 +88,72 @@
     attribution: 'Source: Esri, Maxar, Earthstar Geographics, and the GIS community'
   });
 
-  // Add default layer
   osm.addTo(map);
 
-  // Basemap switcher
+  // Basemap switching
   const selector = document.getElementById('basemap');
-  selector.addEventListener('change', function() {
-    map.eachLayer(function(layer) {
-      map.removeLayer(layer);
-    });
+  selector.addEventListener('change', function () {
+    map.eachLayer(function (layer) { map.removeLayer(layer); });
+    if (this.value === 'esri') esri.addTo(map);
+    else osm.addTo(map);
+  });
 
-    if (this.value === 'esri') {
-      esri.addTo(map);
+  // Set bounding box
+  function setBounds() {
+    const latMin = parseFloat(document.getElementById('latMin').value);
+    const latMax = parseFloat(document.getElementById('latMax').value);
+    const lonMin = parseFloat(document.getElementById('lonMin').value);
+    const lonMax = parseFloat(document.getElementById('lonMax').value);
+    if (!isNaN(latMin) && !isNaN(latMax) && !isNaN(lonMin) && !isNaN(lonMax)) {
+      map.fitBounds([[latMin, lonMin], [latMax, lonMax]]);
     } else {
-      osm.addTo(map);
+      alert("Please enter valid numbers.");
+    }
+  }
+
+  // Handle file input
+  document.getElementById('fileInput').addEventListener('change', function (e) {
+    const file = e.target.files[0];
+    const ext = file.name.split('.').pop().toLowerCase();
+
+    if (ext === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        dynamicTyping: true,
+        complete: function(results) {
+          addPoints(results.data);
+        }
+      });
+    } else if (ext === 'xlsx') {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        addPoints(sheet);
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      alert("Unsupported file type.");
     }
   });
+
+  // Add points to map
+  function addPoints(data) {
+    data.forEach(function(row) {
+      const lat = parseFloat(row.lat || row.latitude || row.Lat || row.Latitude);
+      const lon = parseFloat(row.lon || row.longitude || row.Lon || row.Longitude);
+      if (!isNaN(lat) && !isNaN(lon)) {
+        L.circleMarker([lat, lon], {
+          radius: 6,
+          color: 'blue',
+          fillColor: 'skyblue',
+          fillOpacity: 0.7
+        }).addTo(map).bindPopup(`Lat: ${lat}<br>Lon: ${lon}`);
+      }
+    });
+  }
 </script>
 
 </body>
