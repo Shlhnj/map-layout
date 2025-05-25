@@ -8,43 +8,77 @@
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
   <style>
-    #map { height: 600px; width: 100%; }
+    body {
+      margin: 0;
+      font-family: sans-serif;
+    }
+
+    header {
+      text-align: center;
+      background: #f0f0f0;
+      padding: 10px;
+      font-size: 1.5em;
+      font-weight: bold;
+    }
+
+    #container {
+      display: flex;
+    }
+
+    #map {
+      height: calc(100vh - 60px);
+      width: 50%;
+    }
+
+    #sidepanel {
+      width: 50%;
+      padding: 10px;
+      position: relative;
+    }
+
     #basemapSelector {
       position: absolute;
       top: 10px;
-      left: 10px;
-      z-index: 1000;
+      right: 10px;
       background: white;
       padding: 6px;
       border-radius: 4px;
-      font-family: sans-serif;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
   </style>
 </head>
 <body>
 
-<h2>Simple Map Layout Web App</h2>
+<header>🗺️ Simple Map Layout Web App</header>
 
-<!-- Basemap dropdown -->
-<div id="basemapSelector">
-  <label for="basemap">Basemap:</label>
-  <select id="basemap">
-    <option value="osm">OpenStreetMap</option>
-    <option value="esri">Esri Aerial</option>
-  </select>
+<div id="container">
+  <!-- Left: Map -->
+  <div id="map"></div>
+
+  <!-- Right: Side panel -->
+  <div id="sidepanel">
+    <!-- Basemap selector -->
+    <div id="basemapSelector">
+      <label for="basemap">Basemap:</label>
+      <select id="basemap">
+        <option value="osm">OpenStreetMap</option>
+        <option value="esri">Esri Aerial</option>
+      </select>
+    </div>
+
+    <!-- You can add more map controls, legends, uploads etc here -->
+    <p>🧭 Add controls here...</p>
+  </div>
 </div>
-
-<!-- Map container -->
-<div id="map"></div>
 
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 
 <script>
-  // Map initialization
+  // Initialize map
   var map = L.map('map').setView([-7.1, 110.5], 13);
 
-  // Basemap layers
+  // Tile layers
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
   });
@@ -64,7 +98,6 @@
       map.removeLayer(layer);
     });
 
-    // Add selected basemap back
     if (this.value === 'esri') {
       esri.addTo(map);
     } else {
