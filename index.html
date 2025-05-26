@@ -4,6 +4,8 @@
   <title>Simple Map Layout</title>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
@@ -65,6 +67,10 @@
     <!-- Upload points -->
     <label>Upload CSV/Excel (with lat/lon):</label><br>
     <input type="file" id="fileInput"><br><br>
+
+    <!-- Export to PNG -->
+    <button onclick="exportMap()">Export Map (PNG 300 DPI)</button>
+
   </div>
 </div>
 
@@ -77,7 +83,7 @@
 
 <script>
   // Initialize map
-  var map = L.map('map').setView([-7.1, 110.5], 13);
+  var map = L.map('map').setView([-7.0519459, 110.4399367], 13);
 
   var osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap contributors'
@@ -181,6 +187,48 @@
     }
   }
 </script>
+
+<script>
+  function exportMap() {
+    const mapContainer = document.getElementById("map");
+
+    // Set target resolution (e.g. A4 @ 300 DPI = 3508x2480 px)
+    const width = 3508;
+    const height = 2480;
+
+    // Temporarily enlarge the map container
+    const originalSize = {
+      width: mapContainer.style.width,
+      height: mapContainer.style.height
+    };
+
+    mapContainer.style.width = width + "px";
+    mapContainer.style.height = height + "px";
+    map.invalidateSize();
+
+    // Wait a moment for resizing to settle
+    setTimeout(() => {
+      html2canvas(mapContainer, {
+        useCORS: true,
+        width: width,
+        height: height,
+        scale: 1
+      }).then(canvas => {
+        // Download the PNG
+        const link = document.createElement("a");
+        link.download = "map_export_300dpi.png";
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+
+        // Revert to original size
+        mapContainer.style.width = originalSize.width;
+        mapContainer.style.height = originalSize.height;
+        map.invalidateSize();
+      });
+    }, 1000); // wait 1s
+  }
+</script>
+
 
 </body>
 </html>
