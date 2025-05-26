@@ -5,6 +5,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
+<!-- html2canvas for capturing map -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
   <!-- Leaflet CSS -->
@@ -33,9 +34,56 @@
       border-radius: 4px;
       box-shadow: 0 0 5px rgba(0,0,0,0.2);
     }
+    
   </style>
+  
+<style>
+  #map-wrapper {
+    position: relative;
+    width: 100%;
+  }
+
+  #map-title {
+    position: absolute;
+    top: 10px;
+    width: 100%;
+    text-align: center;
+    font-size: 24px;
+    font-weight: bold;
+    z-index: 999;
+    background: rgba(255, 255, 255, 0.8);
+    padding: 5px;
+  }
+
+  #map-legend {
+    position: absolute;
+    bottom: 30px;
+    left: 10px;
+    font-size: 14px;
+    background: rgba(255, 255, 255, 0.85);
+    padding: 6px;
+    border-radius: 4px;
+    z-index: 999;
+  }
+
+  .leaflet-control-scale-line {
+    background: rgba(255, 255, 255, 0.85);
+    padding: 2px 6px;
+  }
+</style>
+
+
+  
 </head>
 <body>
+  
+<div id="map-wrapper">
+  <div id="map-title">My Map Title</div>
+  <div id="map-legend">Legend:<br>- Blue: Sample points</div>
+  <div id="map" style="height: 500px;"></div>
+</div>
+
+<button onclick="exportMap()">Export Map (PNG 300 DPI)</button>
 
 <header>🗺️ Simple Map Layout Web App</header>
 
@@ -82,6 +130,10 @@
 <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
 
 <script>
+  
+  //add control
+  L.control.scale().addTo(map);
+
   // Initialize map
   var map = L.map('map').setView([-7.0519459, 110.4399367], 13);
 
@@ -228,6 +280,34 @@
     }, 1000); // wait 1s
   }
 </script>
+
+  <script>
+  function exportMap() {
+    const wrapper = document.getElementById("map-wrapper");
+
+    // Target A4 at 300 DPI = 3508 x 2480 pixels (landscape/portrait)
+    const exportWidth = 3508; // A4 width in px
+    const exportHeight = 2480; // A4 height in px
+    const scaleFactor = exportWidth / wrapper.offsetWidth;
+
+    html2canvas(wrapper, {
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: "#ffffff",
+      scale: scaleFactor,
+      width: wrapper.offsetWidth,
+      height: wrapper.offsetHeight,
+      windowWidth: wrapper.scrollWidth,
+      windowHeight: wrapper.scrollHeight,
+    }).then((canvas) => {
+      const link = document.createElement("a");
+      link.download = "map_export_300dpi.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  }
+</script>
+
 
 
 </body>
