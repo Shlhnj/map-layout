@@ -90,12 +90,18 @@
 
   osm.addTo(map);
 
+  let currentLayer = osm;
+
   // Basemap switching
   const selector = document.getElementById('basemap');
   selector.addEventListener('change', function () {
-    map.eachLayer(function (layer) { map.removeLayer(layer); });
-    if (this.value === 'esri') esri.addTo(map);
-    else osm.addTo(map);
+    map.removeLayer(currentLayer);
+    if (this.value === 'esri') {
+      currentLayer = esri;
+    } else {
+      currentLayer = osm;
+    }
+    currentLayer.addTo(map);
   });
 
   // Set bounding box
@@ -111,6 +117,9 @@
     }
   }
 
+  // Marker group for uploaded data
+  const uploadLayer = L.layerGroup().addTo(map);
+
   // Handle file input
   document.getElementById('fileInput').addEventListener('change', function (e) {
     const file = e.target.files[0];
@@ -121,6 +130,7 @@
         header: true,
         dynamicTyping: true,
         complete: function(results) {
+          uploadLayer.clearLayers(); // Clear previous
           addPoints(results.data);
         }
       });
@@ -131,6 +141,7 @@
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const sheet = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        uploadLayer.clearLayers(); // Clear previous
         addPoints(sheet);
       };
       reader.readAsArrayBuffer(file);
@@ -141,18 +152,33 @@
 
   // Add points to map
   function addPoints(data) {
+    let bounds = [];
     data.forEach(function(row) {
-      const lat = parseFloat(row.lat || row.latitude || row.Lat || row.Latitude);
-      const lon = parseFloat(row.lon || row.longitude || row.Lon || row.Longitude);
+      const lat = parseFloat(
+        row.lat || row.latitude || row.Lat || row.Latitude
+      );
+      const lon = parseFloat(
+        row.lon || row.longitude || row.Lon || row.Longitude
+      );
+
       if (!isNaN(lat) && !isNaN(lon)) {
-        L.circleMarker([lat, lon], {
+        const marker = L.circleMarker([lat, lon], {
           radius: 6,
           color: 'blue',
           fillColor: 'skyblue',
           fillOpacity: 0.7
-        }).addTo(map).bindPopup(`Lat: ${lat}<br>Lon: ${lon}`);
+        }).bindPopup(`Lat: ${lat}<br>Lon: ${lon}`);
+        marker.addTo(uploadLayer);
+        bounds.push([lat, lon]);
       }
     });
+
+    // Zoom to uploaded points
+    if (bounds.length) {
+      map.fitBounds(bounds);
+    } else {
+      alert("No valid coordinates found in the file.");
+    }
   }
 </script>
 
